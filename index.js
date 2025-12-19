@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const {
+  MongoClient,
+  ServerApiVersion
+} = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -35,18 +38,47 @@ async function run() {
     const parcelsCollection = db.collection('parcels');
 
     app.get('/parcels', async (req, res) => {
-        const parcels = await parcelsCollection.find().toArray();
-        res.send(parcels);
+      const parcels = await parcelsCollection.find().toArray();
+      res.send(parcels);
     })
-    
+
+    // parcel api
+    //GET: ALL parcels or parcels by user (created_by), sorted by latest
+    app.get('/parcels', async (req, res) => {
+      try{
+        const userEmail = req.query.email;
+        const query = userEmail ? { created_by: userEmail} : {};
+        const options = {
+          sort: {createdAt: -1},
+        };
+        const parcels = await parcelsCollection.find(query, options).toArray();
+        res.send(parcels);
+      }catch (error){
+          console.error('Error fetching parcles: ', error);
+          res.status(500).send({ message : 'Failed to parcel'})
+      }
+      
+    });
+
+
     app.post('/parcels', async (req, res) => {
+      try {
         const newParcel = req.body;
         const result = await parcelsCollection.insertOne(newParcel);
-        res.send(result);
+        res.status(201).send(result);
+        console.log("uploaded data is : ", result);
+      } catch (error) {
+        console.error('Error inserting parcel:', error);
+        res.status(500).send({
+          message: 'Internal Server Error'
+        });
+      }
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    await client.db("admin").command({
+      ping: 1
+    });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -65,18 +97,18 @@ run().catch(console.dir);
 
 /* ---------- Test Route ---------- */
 app.get('/', (req, res) => {
-    res.send('Parcel server is running 🚚');
+  res.send('Parcel server is running 🚚');
 });
 
 /* ---------- Health Check ---------- */
 app.get('/health', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Server is healthy'
-    });
+  res.status(200).json({
+    success: true,
+    message: 'Server is healthy'
+  });
 });
 
 /* ---------- Start Server ---------- */
 app.listen(port, () => {
-    console.log(`🚀 Server running on port ${port}`);
+  console.log(`🚀 Server running on port ${port}`);
 });
