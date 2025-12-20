@@ -1,20 +1,15 @@
+
+
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const {
-  MongoClient,
-  ServerApiVersion
-} = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
 /* ---------- Middlewares ---------- */
 app.use(cors());
 app.use(express.json());
-
-
-
-
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@emajohn-cluster.qrt35.mongodb.net/?appName=emajohn-cluster`;
@@ -36,11 +31,6 @@ async function run() {
 
     const db = client.db('parcelDB');
     const parcelsCollection = db.collection('parcels');
-
-    app.get('/parcels', async (req, res) => {
-      const parcels = await parcelsCollection.find().toArray();
-      res.send(parcels);
-    })
 
     // parcel api
     //GET: ALL parcels or parcels by user (created_by), sorted by latest
@@ -74,6 +64,22 @@ async function run() {
         });
       }
     });
+
+    app.delete('/parcels/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await parcelsCollection.deleteOne({ _id: new ObjectId(id) });
+        if (result.deletedCount === 0) {
+          return res.status(404).send({ message: 'Parcel not found' });
+        }
+        res.send({ message: 'Parcel deleted successfully' });
+      }
+      catch (error) {
+        console.error('Error deleting parcel:', error);
+      }
+    });
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({
