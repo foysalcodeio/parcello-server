@@ -1,9 +1,11 @@
-
-
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const {
+  MongoClient,
+  ServerApiVersion,
+  ObjectId
+} = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -27,27 +29,57 @@ async function run() {
   try {
     await client.connect();
 
-
-
     const db = client.db('parcelDB');
     const parcelsCollection = db.collection('parcels');
 
     // parcel api
     //GET: ALL parcels or parcels by user (created_by), sorted by latest
     app.get('/parcels', async (req, res) => {
-      try{
+      try {
         const userEmail = req.query.email;
-        const query = userEmail ? { created_by: userEmail} : {};
+        const query = userEmail ? {
+          created_by: userEmail
+        } : {};
         const options = {
-          sort: {createdAt: -1},
+          sort: {
+            createdAt: -1
+          },
         };
         const parcels = await parcelsCollection.find(query, options).toArray();
         res.send(parcels);
-      }catch (error){
-          console.error('Error fetching parcles: ', error);
-          res.status(500).send({ message : 'Failed to parcel'})
+      } catch (error) {
+        console.error('Error fetching parcles: ', error);
+        res.status(500).send({
+          message: 'Failed to parcel'
+        })
       }
-      
+
+    });
+
+    app.get('/parcels/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({
+            message: 'Invalid parcel ID'
+          });
+        }
+        const parcel = await parcelsCollection.findOne({
+          _id: new ObjectId(id)
+        });
+        if (!parcel) {
+          return res.status(404).send({
+            message: 'Parcel not found'
+          });
+        }
+        res.send(parcel);
+        
+      } catch (error) {
+        console.error('Error fetching parcel:', error);
+        res.status(500).send({
+          message: 'Internal Server Error'
+        });
+      }
     });
 
 
@@ -68,13 +100,18 @@ async function run() {
     app.delete('/parcels/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        const result = await parcelsCollection.deleteOne({ _id: new ObjectId(id) });
+        const result = await parcelsCollection.deleteOne({
+          _id: new ObjectId(id)
+        });
         if (result.deletedCount === 0) {
-          return res.status(404).send({ message: 'Parcel not found' });
+          return res.status(404).send({
+            message: 'Parcel not found'
+          });
         }
-        res.send({ message: 'Parcel deleted successfully' });
-      }
-      catch (error) {
+        res.send({
+          message: 'Parcel deleted successfully'
+        });
+      } catch (error) {
         console.error('Error deleting parcel:', error);
       }
     });
