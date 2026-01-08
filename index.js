@@ -1,6 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+
+const stripe = require("stripe")(process.env.PAYMENT_GATEWAY_KEY);
+// Verify that the Stripe key is loaded
+console.log("Stripe key loaded:", process.env.PAYMENT_GATEWAY_KEY ? "YES" : "NO");
+
+
+
 const {
   MongoClient,
   ServerApiVersion,
@@ -73,7 +80,7 @@ async function run() {
           });
         }
         res.send(parcel);
-        
+
       } catch (error) {
         console.error('Error fetching parcel:', error);
         res.status(500).send({
@@ -114,6 +121,27 @@ async function run() {
       } catch (error) {
         console.error('Error deleting parcel:', error);
       }
+    });
+
+
+    app.post('/create-payment-intent', async (req, res) => {
+      const amountInCents = req.body.amountInCents;
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amountInCents,
+          currency: 'usd',
+          payment_method_types: ['card'],
+        });
+        res.json({
+          clientSecret: paymentIntent.client_secret
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to create payment intent'
+        });
+      }
+
+
     });
 
 
