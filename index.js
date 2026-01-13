@@ -41,16 +41,36 @@ async function run() {
     await client.connect();
 
     const db = client.db("parcelDB");
+    const userCollection = db.collection("users");
     const parcelsCollection = db.collection("parcels");
     const paymentsCollection = db.collection("payments");
     const trackingCollection = db.collection("tracking");
+  
 
     /* ---------- PARCEL ROUTES ---------- */
+
+    
+    app.post('/users', async(req, res) => {
+      const email = req.body.email;
+      const userExists = await userCollection.findOne({ email });
+
+      if (userExists) {
+        // update last login 
+        return res.status(409).send({ message: 'User already exists', inserted: false });
+      }
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send({ inserted: true, result });
+    })
+
 
     // Get all parcels or by user email
     app.get("/parcels", async (req, res) => {
       try {
         const email = req.query.email;
+
+        console.log('header request', req.headers)
+
         const query = email ? { created_by: email } : {};
         const options = { sort: { createdAt: -1 } };
 
