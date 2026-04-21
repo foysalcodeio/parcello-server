@@ -236,7 +236,10 @@ async function run() {
             res.send(result);
         })
 
+<<<<<<< HEAD
         
+=======
+>>>>>>> a602207 (first)
         app.get("/riders/pending", async (req, res) => {
             try {
                 const pendingRiders = await ridersCollection.find({ status: "pending" }).toArray();
@@ -460,4 +463,8 @@ app.get("/health", (req, res) => {
 /* ---------- START ---------- */
 app.listen(port, () => {
     console.log(`🚀 Server running on port ${port}`);
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> a602207 (first)
